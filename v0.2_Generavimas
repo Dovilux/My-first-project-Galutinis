@@ -1,0 +1,66 @@
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <random>
+#include <iomanip>
+#include <chrono>
+
+using namespace std;
+
+string intToString(int number) {
+    stringstream ss;
+    ss << number;
+    return ss.str();
+}
+
+int generuotiAtsitiktiniBalus(mt19937& rng) {
+    uniform_int_distribution<int> distribution(1, 10);
+    return distribution(rng);
+}
+
+void generuotiFaila(int studentuSkaicius, int namuDarbuSkaicius) {
+    auto pradzia = chrono::high_resolution_clock::now(); // Pradžios laikas
+
+    ofstream outputFile("studentai" + intToString(studentuSkaicius) + ".txt");
+
+    // Rašyti antraštę
+    outputFile << left << setw(22) << "Vardas" << setw(22) << "Pavarde";
+    for (int i = 1; i <= namuDarbuSkaicius; ++i) {
+        outputFile << right << setw(8) << "ND" + intToString(i);
+    }
+    outputFile << right << setw(8) << "Egz." << endl;
+
+    // Generuoti studentų duomenis
+    mt19937 rng(random_device{}());
+
+    int i = 1;
+    while (i <= studentuSkaicius) {
+        outputFile << left << setw(22) << "Vardas" + intToString(i) << setw(22) << "Pavarde" + intToString(i);
+        int j = 0;
+        while (j < namuDarbuSkaicius) {
+            outputFile << right << setw(8) << generuotiAtsitiktiniBalus(rng);
+            ++j;
+        }
+        outputFile << right << setw(8) << generuotiAtsitiktiniBalus(rng) << endl;
+        ++i;
+    }
+
+    outputFile.close();
+
+    auto pabaiga = chrono::high_resolution_clock::now(); // Pabaigos laikas
+    auto trukme = chrono::duration_cast<chrono::milliseconds>(pabaiga - pradzia); // Laiko trukmė
+
+    cout << fixed << setprecision(3); // Nustatyti išvesties formatą
+    cout << "Failas studentai" + intToString(studentuSkaicius) + ".txt sukurtas per " << trukme.count() / 1000.0 << " s." << endl;
+}
+
+int main() {
+    int studentuSkaiciai[] = { 1000, 10000, 100000, 1000000, 10000000 };
+    int namuDarbuSkaicius = 15;
+
+    for (int i = 0; i < 5; ++i) {
+        generuotiFaila(studentuSkaiciai[i], namuDarbuSkaicius);
+    }
+
+    return 0;
+}
