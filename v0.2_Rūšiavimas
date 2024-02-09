@@ -12,7 +12,7 @@
 
 using namespace std;
 
-// Jūsų struktūra (jei neturite)
+
 struct Studentas {
     string vardas;
     string pavarde;
@@ -55,7 +55,7 @@ void sukurtiFailusPagalBalus(const vector<Studentas>& studentai, string& failo_p
     vector<Studentas> pasiektukai;
     vector<Studentas> paliktukai;
 
-    // Pasirinkimas kaip surūšiuoti
+    
     char surusiuoti_pagal;
     cout << "Kaip norite surusiuoti rezultatus?\n"
         << "1. Pagal varda ir pavarde\n"
