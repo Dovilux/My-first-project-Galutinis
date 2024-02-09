@@ -1,0 +1,166 @@
+﻿#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <vector>
+#include <iomanip>
+#include <random>
+#include <algorithm>
+
+using namespace std;
+
+struct Studentas {
+    string vardas;
+    string pavarde;
+    vector<int> namu_darbai;
+    int egzaminas;
+    double galutinis;
+};
+
+double generuotiAtsitiktiniBalus() {
+    random_device rd;
+    mt19937 gen(rd());
+    uniform_int_distribution<> dis(1, 10);
+    return dis(gen);
+}
+
+double skaiciuotiGalutini(const Studentas& studentas, bool naudoti_vidurki) {
+    if (naudoti_vidurki) {
+        double nd_vidurkis = 0;
+        for (int pazymys : studentas.namu_darbai) {
+            nd_vidurkis += pazymys;
+        }
+        nd_vidurkis /= studentas.namu_darbai.size();
+        return 0.4 * nd_vidurkis + 0.6 * studentas.egzaminas;
+    }
+    else {
+        vector<int> nd_kopija = studentas.namu_darbai;
+        sort(nd_kopija.begin(), nd_kopija.end());
+
+        double median;
+        int dydis = nd_kopija.size();
+        if (dydis % 2 == 0) {
+            median = (nd_kopija[dydis / 2 - 1] + nd_kopija[dydis / 2]) / 2.0;
+        }
+        else {
+            median = nd_kopija[dydis / 2];
+        }
+
+        return 0.4 * median + 0.6 * studentas.egzaminas;
+    }
+}
+bool compareByVardasPavarde(const Studentas& a, const Studentas& b) {
+    if (a.vardas != b.vardas) {
+        return a.vardas < b.vardas;
+    }
+    return a.pavarde < b.pavarde;
+}
+int main() {
+    vector<Studentas> studentai;
+
+    string vardas, pavarde;
+    char kartoti;
+
+    cout << "Pasirinkite, kaip skaiciuoti galutini bala (1 - Vidurkis, 2 - Mediana): ";
+    int pasirinkimas;
+    cin >> pasirinkimas;
+    bool naudoti_vidurki = (pasirinkimas == 1);
+
+    cout << "Pasirinkite, kaip įvesti balus (1 - Ranka, 2 - Atsitiktinai, 3 - Iš failo): ";
+    int balu_ivestis;
+    cin >> balu_ivestis;
+
+    if (balu_ivestis == 3) {
+        string failo_pavadinimas;
+        cout << "Įveskite failo pavadinimą su studentų vardais, pavardėmis ir balais: ";
+        cin >> failo_pavadinimas;
+
+        ifstream failas(failo_pavadinimas);
+
+        if (!failas.is_open()) {
+            cout << "Klaida atidarant failą." << endl;
+            return 1;
+        }
+
+        string eilute;
+        getline(failas, eilute);
+
+        while (getline(failas, eilute)) {
+            istringstream iss(eilute);
+            Studentas naujas_studentas;
+
+            iss >> naujas_studentas.vardas >> naujas_studentas.pavarde;
+
+            int balas;
+            while (iss >> balas) {
+                naujas_studentas.namu_darbai.push_back(balas);
+            }
+
+            naujas_studentas.egzaminas = naujas_studentas.namu_darbai.back();
+            naujas_studentas.namu_darbai.pop_back();
+
+            naujas_studentas.galutinis = skaiciuotiGalutini(naujas_studentas, naudoti_vidurki);
+
+            studentai.push_back(naujas_studentas);
+        }
+
+        failas.close();
+    }
+    else {
+        do {
+            Studentas naujas_studentas;
+            cout << "Įveskite studento vardą: ";
+            cin >> vardas;
+            naujas_studentas.vardas = vardas;
+
+            cout << "Įveskite studento pavardę: ";
+            cin >> pavarde;
+            naujas_studentas.pavarde = pavarde;
+
+            // Sugeneruojame egzamino rezultatą
+            if (balu_ivestis == 2) {
+                naujas_studentas.egzaminas = generuotiAtsitiktiniBalus();
+                cout << "Sugeneruotas egzamino rezultatas: " << naujas_studentas.egzaminas << endl;
+            }
+            else {
+                cout << "Įveskite egzamino rezultatą: ";
+                cin >> naujas_studentas.egzaminas;
+            }
+
+            // Sugeneruojame namų darbų rezultatus
+            if (balu_ivestis == 2) {
+                cout << "Sugeneruoti namų darbų rezultatai: ";
+                for (int i = 0; i < 5; ++i) { // Generuojame 5 atsitiktinius balus
+                    naujas_studentas.namu_darbai.push_back(generuotiAtsitiktiniBalus());
+                    cout << naujas_studentas.namu_darbai.back() << " ";
+                }
+                cout << endl;
+            }
+            else {
+                cout << "Įveskite namų darbų rezultatus (atskirkite balus tarpu): ";
+                int balas;
+                while (cin >> balas) {
+                    naujas_studentas.namu_darbai.push_back(balas);
+                }
+            }
+
+            naujas_studentas.galutinis = skaiciuotiGalutini(naujas_studentas, naudoti_vidurki);
+
+            studentai.push_back(naujas_studentas);
+
+            cout << "Ar norite įvesti dar vieno studento duomenis? (y/n): ";
+            cin >> kartoti;
+        } while (kartoti == 'y' || kartoti == 'Y');
+    }
+    sort(studentai.begin(), studentai.end(), compareByVardasPavarde);
+    // Išvedame sugeneruotus studentų duomenis
+    cout << "Sugeneruoti studentų duomenys:\n";
+    cout << left << setw(20) << "Vardas" << setw(20) << "Pavardė" << setw(20) << (naudoti_vidurki ? "Galutinis (Vid.)" : "Galutinis (Med.)") << endl;
+    cout << "-------------------------------------------------------------------\n";
+    cout << fixed << setprecision(2);
+    for (const auto& studentas : studentai) {
+        cout << setw(20) << studentas.vardas << setw(20) << studentas.pavarde << setw(20) << studentas.galutinis << endl;
+    }
+
+    return 0;
+}
