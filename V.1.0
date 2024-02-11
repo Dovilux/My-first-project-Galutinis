@@ -117,10 +117,10 @@ void sukurtiFailusPagalBalus(const vector<Studentas>& studentai, string& failo_p
             return studentas.galutinis >= threshold;
         };
 
-        vector<Studentas> paliktukai;
+        
         remove_copy_if(studentai.begin(), studentai.end(), back_inserter(paliktukai), belowThreshold);
 
-        vector<Studentas> pasiektukai;
+        
         remove_copy_if(studentai.begin(), studentai.end(), back_inserter(pasiektukai), aboveThreshold);
     }
 
