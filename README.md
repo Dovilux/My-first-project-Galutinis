@@ -3,4 +3,7 @@ Sukurta programa kuri sugeneruoja atsitiktinai duomenis, arba ivedi ranka, arba 
 Generavimas atsitiktiniu balu; 
 Galutinio balo skaičiavimas pasirinktinai pagal vidurkį ir medianą
 
+Naudojimosi programa instrukcijos:
+1. 
+
 
