@@ -1,0 +1,279 @@
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <vector>
+#include <iomanip>
+#include <random>
+#include <algorithm>
+#include <chrono>
+#include <tuple>
+#include <list>
+
+using namespace std;
+
+//struct Studentas {
+//    string vardas;
+//    string pavarde;
+//    vector<int> namu_darbai;
+//    int egzaminas;
+//    double galutinis;
+//};
+
+class Studentas {
+private:
+    string vardas;
+    string pavarde;
+    vector<int> namu_darbai;
+    int egzaminas;
+    double galutinis;
+public:
+    Studentas(const string& vardas, const string& pavarde, const vector<int>& namu_darbai, int egzaminas, double galutinis)
+        : vardas(vardas), pavarde(pavarde), namu_darbai(namu_darbai), egzaminas(egzaminas), galutinis(galutinis) {}
+    
+    inline string Vardas() const {return vardas;}
+    inline string Pavarde() const {return pavarde;}
+    inline vector<int> Namu_darbai() const { return namu_darbai; }
+    inline int Egzaminas() const { return egzaminas; }
+    inline double Galutinis() const { return galutinis; }
+
+    void NaujasVardas(const string& NaujasVardas) {
+        vardas = NaujasVardas;
+    }
+    void NaujaPavarde(const string& NaujaPavarde) {
+        pavarde = NaujaPavarde;
+    }
+    void NaujiNamuDarbai(const vector<int>& NaujiNamuDarbai) {
+        namu_darbai = NaujiNamuDarbai;
+    }
+    void NaujasEgzaminas(const int& NaujasEgzaminas) {
+        egzaminas = NaujasEgzaminas;
+    }
+    void NaujasGalutinis(const double& NaujasGalutinis) {
+        galutinis = NaujasGalutinis;
+    }
+    ~Studentas() {}
+};
+
+double skaiciuotiGalutini(const vector<int>& namu_darbai, const int& egzaminas) {
+    double nd_vidurkis = 0;
+    for (int pazymys : namu_darbai) {
+        nd_vidurkis += pazymys;
+    }
+    nd_vidurkis /= namu_darbai.size();
+
+    return 0.4 * nd_vidurkis + 0.6 * egzaminas;
+}
+
+bool palygintiPagalVardaPavarde(const Studentas& a, const Studentas& b) {
+    string tempvardasa = a.Vardas();
+    string tempvardasb = b.Vardas();
+    string temppavardea = a.Pavarde();
+    string temppavardeb = b.Pavarde();
+    return tie(tempvardasa, temppavardea) < tie(tempvardasb, temppavardeb);
+}
+
+bool palygintiPagalGalutini(const Studentas& a, const Studentas& b) {
+    return a.Galutinis() > b.Galutinis();
+}
+
+void sukurtiFailusPagalBalus(const vector<Studentas>& studentai, string& failo_pavadinimas, char konteineriotipas) {
+    failo_pavadinimas = failo_pavadinimas.substr(0, failo_pavadinimas.find_last_of("."));
+    string paliktukai_pavadinimas = failo_pavadinimas + "_paliktukai.txt";
+    string pasiektukai_pavadinimas = failo_pavadinimas + "_pasiektukai.txt";
+
+    ofstream paliktukai_failas(paliktukai_pavadinimas);
+    ofstream pasiektukai_failas(pasiektukai_pavadinimas);
+
+    if (!paliktukai_failas.is_open() || !pasiektukai_failas.is_open()) {
+        cout << "Klaida atidarant failus naujiems duomenims." << endl;
+        return;
+    }
+
+    vector<Studentas> pasiektukai;
+    vector<Studentas> paliktukai;
+    if (konteineriotipas == '1') {
+        pasiektukai = vector<Studentas>();
+        paliktukai = vector<Studentas>();
+    }
+    else {
+        list<Studentas> pasiektukai;
+        list<Studentas> paliktukai;
+    }
+    // Pasirinkimas kaip surušiuoti
+    char surusiuoti_pagal;
+    cout << "Kaip norite surusiuoti rezultatus?\n"
+        << "1. Pagal varda ir pavarde\n"
+        << "2. Pagal galutini bala\n";
+    cin >> surusiuoti_pagal;
+
+    char strategija;
+    cout << "Kokia strategija naudosite?\n"
+        << "1. Mano strategija (sukuriami 2 vektoriai arba listai ir iteruojant su for loop kopijuojama i viena arba kita)\n"
+        << "2. remove if\n"
+        << "3. remove copy if\n";
+    cin >> strategija;
+
+    auto start_time = chrono::high_resolution_clock::now();
+
+    if (strategija == '1') {
+        for (const auto& studentas : studentai) {
+            if (studentas.Galutinis() >= 5) {
+                pasiektukai.push_back(studentas);
+            }
+            else {
+                paliktukai.push_back(studentas);
+            }
+        }
+    }
+    else if (strategija == '2') {
+
+        double threshold = 5;
+        auto belowThreshold = [threshold](const Studentas& studentas) {
+            return studentas.Galutinis() < threshold;
+        };
+
+        auto tempStudentai = studentai;
+        auto newEnd = remove_if(tempStudentai.begin(), tempStudentai.end(), belowThreshold);
+
+        for (const auto& studentas : studentai) {
+            if (studentas.Galutinis() < 5) {
+                paliktukai.push_back(studentas);
+            }
+        }
+
+        tempStudentai.erase(newEnd, tempStudentai.end());
+        pasiektukai = tempStudentai;
+    }
+    else if (strategija == '3') {
+
+        double threshold = 5;
+        auto belowThreshold = [threshold](const Studentas& studentas) {
+            return studentas.Galutinis() < threshold;
+        };
+
+        auto aboveThreshold = [threshold](const Studentas& studentas) {
+            return studentas.Galutinis() >= threshold;
+        };
+
+        //vector<Studentas> paliktukai;
+        remove_copy_if(studentai.begin(), studentai.end(), back_inserter(paliktukai), belowThreshold);
+
+        //vector<Studentas> pasiektukai;
+        remove_copy_if(studentai.begin(), studentai.end(), back_inserter(pasiektukai), aboveThreshold);
+    }
+
+    if (surusiuoti_pagal == '1') {
+        sort(pasiektukai.begin(), pasiektukai.end(), palygintiPagalVardaPavarde);
+        sort(paliktukai.begin(), paliktukai.end(), palygintiPagalVardaPavarde);
+    }
+    else if (surusiuoti_pagal == '2') {
+        sort(pasiektukai.begin(), pasiektukai.end(), palygintiPagalGalutini);
+        sort(paliktukai.begin(), paliktukai.end(), palygintiPagalGalutini);
+    }
+    else {
+        cout << "Neteisingas pasirinkimas, rusiuojama pagal varda ir pavarde.\n";
+        sort(pasiektukai.begin(), pasiektukai.end(), palygintiPagalVardaPavarde);
+        sort(paliktukai.begin(), paliktukai.end(), palygintiPagalVardaPavarde);
+    }
+
+    auto end_time = chrono::high_resolution_clock::now();
+    auto duration = chrono::duration_cast<chrono::milliseconds>(end_time - start_time);
+
+    start_time = chrono::high_resolution_clock::now();
+    for (const auto& studentas : pasiektukai) {
+        pasiektukai_failas << studentas.Vardas() << " " << studentas.Pavarde() << " " << studentas.Galutinis() << endl;
+    }
+
+    for (const auto& studentas : paliktukai) {
+        paliktukai_failas << studentas.Vardas() << " " << studentas.Pavarde() << " " << studentas.Galutinis() << endl;
+    }
+
+    paliktukai_failas.close();
+    pasiektukai_failas.close();
+
+    end_time = chrono::high_resolution_clock::now();
+    auto duration2 = chrono::duration_cast<chrono::milliseconds>(end_time - start_time);
+
+    cout << "Rusiavimo laikas: " << duration.count() << " ms\n";
+    cout << "Failu kurimo laikas: " << duration2.count() << " ms\n";
+}
+
+int main() {
+
+    vector<Studentas> studentai;
+    bool kartoti = true;
+
+    while (kartoti) {
+
+        char konteineriotipas;
+        cout << "Pasirinkite konteinerio tipa\n"
+            << "1. Vector\n"
+            << "2. List\n";
+        cin >> konteineriotipas;
+
+        if (konteineriotipas == '1') {
+            studentai = vector<Studentas>();
+        }
+        else {
+            list<Studentas> studentai;
+        }
+        string failo_pavadinimas;
+        cout << "Iveskite failo pavadinima: ";
+        cin >> failo_pavadinimas;
+
+        ifstream failas(failo_pavadinimas);
+
+        if (!failas.is_open()) {
+            cout << "Klaida atidarant faila." << endl;
+            return 1;
+        }
+
+        auto start_time1 = chrono::high_resolution_clock::now();
+        string eilute;
+        getline(failas, eilute);
+
+        while (getline(failas, eilute)) {
+            istringstream iss(eilute);
+            string tempvardas;
+            string temppavarde;
+            iss >> tempvardas >> temppavarde;
+
+            int balas;
+            vector<int> tempnamu_darbai;
+            while (iss >> balas) {
+                tempnamu_darbai.push_back(balas);
+            }
+
+            int tempegzaminas;
+            tempegzaminas = tempnamu_darbai.back();
+            tempnamu_darbai.pop_back();
+
+            double tempgalutinis;
+            tempgalutinis = skaiciuotiGalutini(tempnamu_darbai, tempegzaminas);
+
+            studentai.push_back(Studentas(tempvardas, temppavarde, tempnamu_darbai, tempegzaminas, tempgalutinis));
+        }
+
+        failas.close();
+        auto end_time1 = chrono::high_resolution_clock::now();
+        auto duration3 = chrono::duration_cast<chrono::milliseconds>(end_time1 - start_time1);
+        cout << "Failo atidarymo laikas: " << duration3.count() << " ms\n";
+
+        // Rušiuojame studentus pagal galutini bala
+        sort(studentai.begin(), studentai.end(), palygintiPagalGalutini);
+
+        // Sukuriame failus pagal balus
+        sukurtiFailusPagalBalus(studentai, failo_pavadinimas, konteineriotipas);
+
+        char kartoti_input;
+        cout << "Ar norite kartoti testa? (t/n): ";
+        cin >> kartoti_input;
+
+        if (kartoti_input != 't' && kartoti_input != 'T') {
+            kartoti = false;
+        }
+    }
+
+    return 0;
+}
